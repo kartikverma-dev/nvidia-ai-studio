@@ -61,24 +61,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isCollapsed ? 'w-16' : 'w-64 sm:w-72'
       }`}
     >
-      {/* macOS Window Traffic Lights Header */}
+      {/* Header */}
       <div className="flex items-center justify-between px-4 h-12 border-b border-white/[0.07]">
-        {/* macOS Traffic Lights */}
-        <div className="flex items-center gap-2 group/lights">
-          <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 flex items-center justify-center cursor-pointer shadow-sm">
-            <span className="opacity-0 group-hover/lights:opacity-100 text-[8px] font-bold text-black/60 leading-none">×</span>
-          </div>
-          <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 flex items-center justify-center cursor-pointer shadow-sm">
-            <span className="opacity-0 group-hover/lights:opacity-100 text-[8px] font-bold text-black/60 leading-none">–</span>
-          </div>
-          <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 flex items-center justify-center cursor-pointer shadow-sm">
-            <span className="opacity-0 group-hover/lights:opacity-100 text-[7px] font-bold text-black/60 leading-none">+</span>
+        {/* Brand Header */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-white/[0.05] border border-white/[0.1] shadow-sm">
+            <svg className="w-4 h-4 text-[#E5FF44]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="m2 17 10 5 10-5" />
+              <path d="m2 12 10 5 10-5" />
+            </svg>
+            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#E5FF44]" />
           </div>
 
           {!isCollapsed && (
-            <div className="ml-3 flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-white tracking-wider">EVILCLOWN</span>
-              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-[#E5FF44]/15 text-[#E5FF44] font-bold">PRO</span>
+              <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-[#E5FF44]/15 text-[#E5FF44] font-bold">PRO</span>
             </div>
           )}
         </div>
