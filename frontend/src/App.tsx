@@ -10,6 +10,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { Model, Conversation, ChatMessage } from './types';
 import { fetchHealth, fetchModels, streamChatCompletion } from './api';
 
+const DEFAULT_VERIFIED_MODEL = 'meta/llama-3.2-11b-vision-instruct';
+
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('chat');
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -17,7 +19,7 @@ export const App: React.FC = () => {
 
   // Models state
   const [models, setModels] = useState<Model[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>('meta/llama-3.1-70b-instruct');
+  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_VERIFIED_MODEL);
   const [hasNvidiaKey, setHasNvidiaKey] = useState<boolean>(true);
 
   // Telemetry metrics
@@ -55,6 +57,7 @@ export const App: React.FC = () => {
         const fetchedModels = await fetchModels();
         if (fetchedModels.length > 0) {
           setModels(fetchedModels);
+          // Set to default or verified model
           const defaultModel = fetchedModels.find(m => m.is_default) || fetchedModels[0];
           setSelectedModel(defaultModel.id);
         }
@@ -63,6 +66,24 @@ export const App: React.FC = () => {
       }
     }
     init();
+  }, []);
+
+  // Keyboard shortcut listener for macOS navigation (⌘1..5, ⌘N)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      if (!isCmdOrCtrl) return;
+
+      if (e.key === '1') { e.preventDefault(); setActiveTab('chat'); }
+      else if (e.key === '2') { e.preventDefault(); setActiveTab('playground'); }
+      else if (e.key === '3') { e.preventDefault(); setActiveTab('swarm'); }
+      else if (e.key === '4') { e.preventDefault(); setActiveTab('code'); }
+      else if (e.key === '5') { e.preventDefault(); setActiveTab('usage'); }
+      else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); handleNewChat(); }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const activeConversation = conversations.find(c => c.id === activeConversationId) || conversations[0];
@@ -115,7 +136,7 @@ export const App: React.FC = () => {
       model: selectedModel
     };
 
-    // Update conversation with user message and empty assistant placeholder
+    // Update conversation with user message and assistant placeholder
     setConversations(prev => prev.map(c => {
       if (c.id === activeConversationId) {
         const newTitle = c.messages.length === 0 ? text.slice(0, 30) + (text.length > 30 ? '...' : '') : c.title;
@@ -146,7 +167,7 @@ export const App: React.FC = () => {
               ...c,
               messages: c.messages.map(m => {
                 if (m.id === assistantMessageId) {
-                  return { ...m, content: m.content + chunk };
+                  return { ...m, content: (m.content || '') + chunk };
                 }
                 return m;
               })
@@ -162,7 +183,7 @@ export const App: React.FC = () => {
               ...c,
               messages: c.messages.map(m => {
                 if (m.id === assistantMessageId) {
-                  return { ...m, content: m.content + `\n\n*[Error: ${err}]*` };
+                  return { ...m, content: (m.content || '') + `\n\n*[Notice: ${err}]*` };
                 }
                 return m;
               })
@@ -186,8 +207,8 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0A0B0E] text-[#F1F2F6]">
-      {/* Persistent Left Sidebar */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#08090C] text-[#F3F4F6] select-none font-sans">
+      {/* Persistent macOS Sidebar */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -203,18 +224,18 @@ export const App: React.FC = () => {
 
       {/* Main Workspace Frame */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        {/* Top Navigation Bar */}
+        {/* Top macOS Titlebar */}
         <TopBar
           title={
             activeTab === 'chat'
-              ? activeConversation?.title || 'EVILCLOWN AI Chat'
+              ? activeConversation?.title || 'AI Chat'
               : activeTab === 'playground'
               ? 'Model Playground'
               : activeTab === 'swarm'
               ? 'AI Swarm Coordinator'
               : activeTab === 'code'
               ? 'Coding Assistant'
-              : 'Usage Telemetry'
+              : 'Telemetry & Usage'
           }
           models={models}
           selectedModel={selectedModel}
@@ -276,7 +297,7 @@ export const App: React.FC = () => {
         </main>
       </div>
 
-      {/* Settings Modal */}
+      {/* macOS Settings Modal Sheet */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}

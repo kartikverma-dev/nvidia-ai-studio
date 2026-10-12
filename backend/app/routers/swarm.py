@@ -20,7 +20,7 @@ class SwarmAgentConfig(BaseModel):
 
 class SwarmRunRequest(BaseModel):
     objective: str
-    model: Optional[str] = "meta/llama-3.1-70b-instruct"
+    model: Optional[str] = "meta/llama-3.2-11b-vision-instruct"
     mode: Optional[str] = "sequential"  # sequential, parallel, or hierarchical
     temperature: Optional[float] = 0.6
     concurrency_limit: Optional[int] = 3

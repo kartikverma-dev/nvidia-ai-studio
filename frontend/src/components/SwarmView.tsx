@@ -2,14 +2,11 @@ import React, { useState } from 'react';
 import { 
   Cpu, 
   Play, 
-  CheckCircle2, 
-  Clock, 
   Layers, 
   Terminal, 
   Sparkles, 
   Copy, 
   Check, 
-  AlertCircle,
   ShieldAlert,
   Code2,
   FileText
@@ -95,9 +92,8 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     setLogs([]);
     setSynthesisResult('');
 
-    // Reset agent states
     setAgents(prev => prev.map(a => ({ ...a, status: 'idle', output: undefined, durationMs: undefined })));
-    addLog(`Initiating EVILCLOWN AI Swarm with model: ${selectedModel}`);
+    addLog(`Initiating EVILCLOWN AI Swarm with target model: ${selectedModel}`);
 
     try {
       const response = await fetch('/api/swarm/run', {
@@ -111,7 +107,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
       });
 
       if (!response.ok) {
-        addLog(`Error: Failed to connect to swarm coordinator (HTTP ${response.status})`);
+        addLog(`Error: Swarm coordinator returned HTTP ${response.status}`);
         setIsSwarmRunning(false);
         return;
       }
@@ -139,7 +135,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
           const raw = trimmed.replace('data: ', '').trim();
 
           if (raw === '[DONE]') {
-            addLog('Swarm orchestration workflow successfully concluded.');
+            addLog('Swarm multi-agent orchestration completed.');
             setIsSwarmRunning(false);
             break;
           }
@@ -152,7 +148,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                 a.id === data.agent_id ? { ...a, status: 'running' } : a
               ));
             } else if (data.event === 'agent_completed') {
-              addLog(`Agent [${data.name}] finished execution in ${data.duration_ms}ms.`);
+              addLog(`Agent [${data.name}] completed in ${data.duration_ms}ms.`);
               setAgents(prev => prev.map(a => 
                 a.id === data.agent_id ? { ...a, status: 'completed', output: data.output, durationMs: data.duration_ms } : a
               ));
@@ -161,10 +157,10 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
               setSynthesisResult(data.synthesis);
               setActiveTab('synthesis');
             } else if (data.event === 'swarm_error') {
-              addLog(`Swarm execution error: ${data.error}`);
+              addLog(`Swarm error: ${data.error}`);
             }
           } catch (e) {
-            // ignore malformed fragments
+            // ignore
           }
         }
       }
@@ -183,31 +179,25 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#0A0B0E] overflow-hidden">
-      {/* Swarm Top Header */}
-      <div className="h-14 border-b border-[#1F222E] bg-[#0E1017] px-6 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-lg bg-[#E5FF44]/10 text-[#E5FF44]">
-            <Cpu className="w-5 h-5" />
-          </div>
+    <div className="flex-1 flex flex-col h-full bg-[#08090C] overflow-hidden">
+      {/* macOS Header Bar */}
+      <div className="h-12 border-b border-white/[0.07] bg-white/[0.02] px-6 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5">
+          <Cpu className="w-4 h-4 text-[#E5FF44]" />
           <div>
-            <h2 className="text-xs font-bold text-white tracking-wide">
+            <h2 className="text-xs font-bold text-white tracking-tight">
               EVILCLOWN AGENT SWARM
             </h2>
-            <p className="text-[10px] text-[#8E93A6]">
-              Autonomous multi-role coordination powered by NVIDIA NIM inference
-            </p>
           </div>
         </div>
 
-        {/* Action button */}
         <button
           onClick={handleLaunchSwarm}
           disabled={isSwarmRunning || !objective.trim()}
-          className={`flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-xs tracking-wide transition-all active:scale-95 shadow-lg ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-xl font-bold text-xs tracking-wide transition-all active:scale-95 shadow-md ${
             isSwarmRunning || !objective.trim()
-              ? 'bg-[#1C1F2E] text-[#63687E] cursor-not-allowed'
-              : 'bg-[#E5FF44] text-black hover:bg-[#D6F232] shadow-[0_0_20px_rgba(229,255,68,0.3)]'
+              ? 'bg-white/[0.05] text-[#63687E] cursor-not-allowed border border-white/[0.04]'
+              : 'bg-[#E5FF44] text-black hover:bg-[#D6F232] shadow-[0_0_18px_rgba(229,255,68,0.25)]'
           }`}
         >
           {isSwarmRunning ? (
@@ -225,16 +215,16 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
       </div>
 
       {/* Main Body */}
-      <div className="flex-1 flex flex-col p-6 space-y-6 overflow-y-auto">
+      <div className="flex-1 flex flex-col p-6 space-y-5 overflow-y-auto">
         {/* Objective Box */}
-        <div className="p-4 rounded-2xl bg-[#12141D] border border-[#202330] space-y-2">
+        <div className="p-4 rounded-2xl macos-card space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-semibold text-[#8E93A6] uppercase tracking-wider flex items-center gap-2">
+            <label className="text-[10px] font-semibold text-[#8E93A6] uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-[#E5FF44]" />
               Swarm Mission Objective
             </label>
-            <span className="text-[11px] font-mono text-[#E5FF44]">
-              4 Specialized Agents
+            <span className="text-[10px] font-mono text-[#E5FF44]">
+              4 Autonomous Roles
             </span>
           </div>
           <textarea
@@ -243,12 +233,12 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
             disabled={isSwarmRunning}
             placeholder="Define complex objective for the AI swarm..."
             rows={2}
-            className="w-full bg-[#0A0B0E] border border-[#222535] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#E5FF44]/60 resize-none leading-relaxed"
+            className="w-full bg-black/40 border border-white/[0.08] rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#E5FF44]/60 resize-none leading-relaxed"
           />
         </div>
 
         {/* 4 Agent Pipeline Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {agents.map((agent, index) => {
             const Icon = agent.icon;
             const isRunning = agent.status === 'running';
@@ -257,24 +247,24 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
             return (
               <div
                 key={agent.id}
-                className={`p-4 rounded-2xl border transition-all relative overflow-hidden ${
+                className={`p-3.5 rounded-2xl border transition-all relative overflow-hidden ${
                   isRunning
-                    ? 'bg-[#161926] border-[#E5FF44]/60 shadow-[0_0_20px_rgba(229,255,68,0.15)] ring-1 ring-[#E5FF44]/30'
+                    ? 'bg-white/[0.08] border-[#E5FF44]/60 shadow-[0_0_20px_rgba(229,255,68,0.15)] ring-1 ring-[#E5FF44]/30'
                     : isCompleted
-                    ? 'bg-[#12141D] border-[#2E3347]'
-                    : 'bg-[#10121A] border-[#1E212E] opacity-75'
+                    ? 'macos-card border-white/[0.12]'
+                    : 'bg-white/[0.02] border-white/[0.05] opacity-75'
                 }`}
               >
                 <div className="flex items-start justify-between">
-                  <div className={`p-2 rounded-xl ${isRunning ? 'bg-[#E5FF44]/15 text-[#E5FF44]' : 'bg-[#181B26] text-[#8E93A6]'}`}>
+                  <div className={`p-2 rounded-xl ${isRunning ? 'bg-[#E5FF44]/20 text-[#E5FF44]' : 'bg-white/[0.05] text-[#8E93A6]'}`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                  <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full ${
                     isRunning 
                       ? 'bg-[#E5FF44] text-black animate-pulse'
                       : isCompleted
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-[#181B26] text-[#63687E]'
+                      : 'bg-white/[0.05] text-[#63687E]'
                   }`}>
                     {agent.status.toUpperCase()}
                   </span>
@@ -291,7 +281,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                 </div>
 
                 {agent.durationMs && (
-                  <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-[#8E93A6]">
+                  <div className="mt-2.5 pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-[#8E93A6]">
                     <span>Latency</span>
                     <span className="text-[#E5FF44]">{agent.durationMs}ms</span>
                   </div>
@@ -302,12 +292,12 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
         </div>
 
         {/* View Tabs: Live Event Stream vs Final Deliverable */}
-        <div className="flex-1 flex flex-col rounded-2xl bg-[#12141D] border border-[#202330] overflow-hidden min-h-[300px]">
-          <div className="flex items-center justify-between px-4 border-b border-[#202330] bg-[#0E1017]">
+        <div className="flex-1 flex flex-col rounded-2xl macos-card overflow-hidden min-h-[280px]">
+          <div className="flex items-center justify-between px-4 border-b border-white/[0.07] bg-white/[0.02]">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveTab('monitor')}
-                className={`py-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-colors ${
+                className={`py-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-colors ${
                   activeTab === 'monitor'
                     ? 'border-[#E5FF44] text-[#E5FF44]'
                     : 'border-transparent text-[#71768B] hover:text-white'
@@ -318,7 +308,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab('synthesis')}
-                className={`py-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-colors ${
+                className={`py-2.5 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 transition-colors ${
                   activeTab === 'synthesis'
                     ? 'border-[#E5FF44] text-[#E5FF44]'
                     : 'border-transparent text-[#71768B] hover:text-white'
@@ -332,10 +322,10 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
             {activeTab === 'synthesis' && synthesisResult && (
               <button
                 onClick={copySynthesis}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-[#8E93A6] hover:text-white bg-[#181B26] border border-[#282C3D] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#8E93A6] hover:text-white bg-white/[0.06] border border-white/[0.08] transition-colors"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-[#E5FF44]" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy Deliverable'}</span>
+                {copied ? <Check className="w-3 h-3 text-[#E5FF44]" /> : <Copy className="w-3 h-3" />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
             )}
           </div>
@@ -344,7 +334,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
             {activeTab === 'monitor' ? (
               <div className="space-y-1.5 text-[#A5ABBE]">
                 {logs.length === 0 ? (
-                  <div className="text-center py-12 text-[#565A6E]">
+                  <div className="text-center py-10 text-[#565A6E]">
                     Swarm logs will stream in real-time once launched.
                   </div>
                 ) : (
@@ -364,8 +354,8 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-[#565A6E]">
-                    No synthesis generated yet. Launch the swarm to generate an executive deliverable.
+                  <div className="text-center py-10 text-[#565A6E]">
+                    No synthesis generated yet. Click Launch Swarm to orchestrate.
                   </div>
                 )}
               </div>

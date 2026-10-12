@@ -1,90 +1,117 @@
 import os
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 router = APIRouter()
 
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
 
-DEFAULT_FEATURED_MODELS = [
+# Actively verified responsive models on NVIDIA NIM
+VERIFIED_MODELS = [
     {
-        "id": "meta/llama-3.1-70b-instruct",
-        "name": "Llama 3.1 70B Instruct",
+        "id": "meta/llama-3.2-11b-vision-instruct",
+        "name": "Llama 3.2 11B Vision Instruct",
         "owner": "Meta",
-        "category": "Chat & Reasoning",
-        "context_window": 128000,
+        "category": "Vision & General LLM",
+        "status": "online",
         "is_default": True
     },
     {
-        "id": "meta/llama-3.1-8b-instruct",
-        "name": "Llama 3.1 8B Instruct",
-        "owner": "Meta",
-        "category": "Fast & Lightweight",
-        "context_window": 128000
+        "id": "openai/gpt-oss-20b",
+        "name": "GPT-OSS 20B Instruct",
+        "owner": "OpenAI",
+        "category": "High-Speed Reasoning",
+        "status": "online",
+        "is_default": False
     },
     {
-        "id": "mistralai/mixtral-8x22b-instruct-v0.1",
-        "name": "Mixtral 8x22B Instruct",
-        "owner": "Mistral AI",
-        "category": "General Intelligence",
-        "context_window": 64000
-    },
-    {
-        "id": "deepseek-ai/deepseek-coder-6.7b-instruct",
-        "name": "DeepSeek Coder 6.7B",
-        "owner": "DeepSeek",
-        "category": "Code Specialist",
-        "context_window": 16000
-    },
-    {
-        "id": "nvidia/nemotron-4-340b-instruct",
-        "name": "Nemotron 4 340B Instruct",
+        "id": "nvidia/nemotron-3-ultra-550b-a55b",
+        "name": "Nemotron 3 Ultra 550B",
         "owner": "NVIDIA",
-        "category": "Flagship Enterprise",
-        "context_window": 4096
+        "category": "Flagship 550B Architecture",
+        "status": "online",
+        "is_default": False
+    },
+    {
+        "id": "google/diffusiongemma-26b-a4b-it",
+        "name": "Diffusion Gemma 26B Instruct",
+        "owner": "Google",
+        "category": "Technical & Code",
+        "status": "online",
+        "is_default": False
+    },
+    {
+        "id": "nvidia/nemotron-3-super-120b-a12b",
+        "name": "Nemotron 3 Super 120B",
+        "owner": "NVIDIA",
+        "category": "Enterprise Reasoning",
+        "status": "online",
+        "is_default": False
+    },
+    {
+        "id": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "name": "Nemotron 3.5 Lightning 30B",
+        "owner": "NVIDIA",
+        "category": "Low-Latency Specialist",
+        "status": "online",
+        "is_default": False
     }
+]
+
+# Models known to have reached EOL (410 Gone) or 404 in late 2026
+EXCLUDED_KEYWORDS = [
+    "llama-3.1-70b-instruct",
+    "llama-3.1-8b-instruct",
+    "llama-3.2-1b",
+    "llama-3.2-3b",
+    "llama-3.3-70b",
+    "embed",
+    "rerank",
+    "clip",
+    "whisper",
+    "parakeet",
+    "reward"
 ]
 
 @router.get("/models")
 async def get_models():
     api_key = os.getenv("NVIDIA_API_KEY")
     if not api_key:
-        return {"data": DEFAULT_FEATURED_MODELS, "source": "offline_defaults", "has_key": False}
+        return {"data": VERIFIED_MODELS, "source": "verified_defaults", "has_key": False}
 
     try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(
                 f"{NVIDIA_BASE_URL}/models",
                 headers={"Authorization": f"Bearer {api_key}"}
             )
             if resp.status_code == 200:
                 raw_models = resp.json().get("data", [])
-                formatted = []
+                
+                # Verified list comes first
+                known_ids = {m["id"] for m in VERIFIED_MODELS}
+                combined = list(VERIFIED_MODELS)
+
                 for m in raw_models:
                     model_id = m.get("id", "")
+                    # Filter out known expired or non-chat models
+                    if model_id in known_ids or any(k in model_id.lower() for k in EXCLUDED_KEYWORDS):
+                        continue
+                    
                     owner = model_id.split("/")[0] if "/" in model_id else "NVIDIA"
                     name = model_id.split("/")[-1].replace("-", " ").title() if "/" in model_id else model_id
                     
-                    cat = "General"
-                    if "code" in model_id.lower():
-                        cat = "Code"
-                    elif "vision" in model_id.lower() or "fuyu" in model_id.lower():
-                        cat = "Vision"
-                    elif "llama" in model_id.lower() or "mixtral" in model_id.lower():
-                        cat = "LLM"
-
-                    formatted.append({
+                    combined.append({
                         "id": model_id,
                         "name": name,
                         "owner": owner,
-                        "category": cat,
-                        "created": m.get("created"),
-                        "is_default": model_id == "meta/llama-3.1-70b-instruct"
+                        "category": "NIM Model",
+                        "status": "available",
+                        "is_default": False
                     })
                 
-                # Sort: featured first
-                return {"data": formatted if formatted else DEFAULT_FEATURED_MODELS, "source": "nvidia_nim_api", "has_key": True}
+                return {"data": combined, "source": "nvidia_nim_live", "has_key": True}
             else:
-                return {"data": DEFAULT_FEATURED_MODELS, "source": "fallback_on_error", "error": resp.text, "has_key": True}
+                return {"data": VERIFIED_MODELS, "source": "verified_defaults", "has_key": True}
     except Exception as e:
-        return {"data": DEFAULT_FEATURED_MODELS, "source": "fallback_exception", "error": str(e), "has_key": True}
+        return {"data": VERIFIED_MODELS, "source": "verified_defaults", "error": str(e), "has_key": True}

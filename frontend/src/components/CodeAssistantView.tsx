@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Code, Play, Copy, Check, Terminal, Bug, Sparkles, RefreshCw, Layers } from 'lucide-react';
+import { Code, Play, Copy, Check, Terminal, Bug, Sparkles, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Model } from '../types';
@@ -78,17 +78,17 @@ ${codeSnippet}
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#0A0B0E] overflow-hidden">
-      {/* Header Bar */}
-      <div className="h-12 border-b border-[#1F222E] bg-[#0E1017] px-6 flex items-center justify-between shrink-0">
+    <div className="flex-1 flex flex-col h-full bg-[#08090C] overflow-hidden">
+      {/* macOS Header Bar */}
+      <div className="h-12 border-b border-white/[0.07] bg-white/[0.02] px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <Code className="w-4 h-4 text-[#E5FF44]" />
-          <span className="text-xs font-semibold text-white tracking-wide">
+          <span className="text-xs font-semibold text-white tracking-tight">
             AI Coding Assistant
           </span>
 
-          {/* Mode Selector */}
-          <div className="flex items-center gap-1 bg-[#141620] p-1 rounded-xl border border-[#222636] ml-4">
+          {/* macOS Segmented Control */}
+          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/[0.08] ml-4">
             {[
               { id: 'debug', label: 'Debug', icon: Bug },
               { id: 'refactor', label: 'Refactor', icon: RefreshCw },
@@ -104,11 +104,11 @@ ${codeSnippet}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                     active
                       ? 'bg-[#E5FF44] text-black font-semibold shadow-sm'
-                      : 'text-[#8E93A6] hover:text-white'
+                      : 'text-[#8E93A6] hover:text-white hover:bg-white/[0.04]'
                   }`}
                 >
                   <Icon className="w-3 h-3" />
-                  <span>{m.label}</span>
+                  <span className="text-[11px]">{m.label}</span>
                 </button>
               );
             })}
@@ -120,8 +120,8 @@ ${codeSnippet}
           disabled={loading || !codeSnippet.trim()}
           className={`flex items-center gap-2 px-4 py-1.5 rounded-xl font-semibold text-xs transition-all active:scale-95 shadow-md ${
             loading || !codeSnippet.trim()
-              ? 'bg-[#1C1F2D] text-[#63687E] cursor-not-allowed'
-              : 'bg-[#E5FF44] text-black hover:bg-[#D6F232] shadow-[0_0_15px_rgba(229,255,68,0.2)]'
+              ? 'bg-white/[0.05] text-[#63687E] cursor-not-allowed border border-white/[0.04]'
+              : 'bg-[#E5FF44] text-black hover:bg-[#D6F232] shadow-[0_0_15px_rgba(229,255,68,0.22)]'
           }`}
         >
           {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
@@ -130,53 +130,53 @@ ${codeSnippet}
       </div>
 
       {/* Dual Workspace Body */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#1F222E] overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.07] overflow-hidden">
         {/* Left: Input Code & Instructions */}
-        <div className="flex-1 flex flex-col p-6 space-y-4 bg-[#0C0D12] overflow-y-auto">
+        <div className="flex-1 flex flex-col p-6 space-y-4 bg-black/20 overflow-y-auto">
           <div className="flex-1 flex flex-col min-h-[220px]">
-            <label className="text-[11px] font-semibold text-[#8E93A6] uppercase tracking-wider mb-2 flex items-center justify-between">
+            <label className="text-[10px] font-semibold text-[#8E93A6] uppercase tracking-wider mb-2 flex items-center justify-between">
               <span>Code Editor</span>
               <span className="font-mono text-[10px] text-[#E5FF44]">TypeScript / Python</span>
             </label>
             <textarea
               value={codeSnippet}
               onChange={(e) => setCodeSnippet(e.target.value)}
-              placeholder="Paste code snippet here..."
-              className="flex-1 bg-[#13151E] border border-[#232737] rounded-xl p-3 text-xs text-[#E1E4F2] font-mono focus:outline-none focus:border-[#E5FF44]/60 resize-none leading-relaxed"
+              placeholder="Paste code snippet..."
+              className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl p-3 text-xs text-[#E1E4F2] font-mono focus:outline-none focus:border-[#E5FF44]/60 resize-none leading-relaxed"
             />
           </div>
 
           <div className="flex flex-col">
-            <label className="text-[11px] font-semibold text-[#8E93A6] uppercase tracking-wider mb-1.5">
-              Specific Directives
+            <label className="text-[10px] font-semibold text-[#8E93A6] uppercase tracking-wider mb-1.5">
+              Refinement Directives
             </label>
             <input
               type="text"
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              placeholder="Additional guidance (e.g. prioritize readability)..."
-              className="bg-[#13151E] border border-[#232737] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#E5FF44]/60"
+              placeholder="Directives..."
+              className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#E5FF44]/60"
             />
           </div>
         </div>
 
-        {/* Right: Output & Review */}
-        <div className="flex-1 flex flex-col p-6 space-y-3 bg-[#0A0B0E] overflow-y-auto">
+        {/* Right: Output */}
+        <div className="flex-1 flex flex-col p-6 space-y-3 bg-transparent overflow-y-auto">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#8E93A6] uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-[#8E93A6] uppercase tracking-wider">
               Analysis & Solution
             </span>
             <button
               onClick={copyResult}
               disabled={!output}
-              className="p-1.5 rounded-lg text-[#8E93A6] hover:text-[#E5FF44] hover:bg-[#1A1D2B] transition-colors"
+              className="p-1 rounded-lg text-[#8E93A6] hover:text-[#E5FF44] hover:bg-white/10 transition-colors"
               title="Copy output"
             >
-              {copied ? <Check className="w-4 h-4 text-[#E5FF44]" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-[#E5FF44]" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
 
-          <div className="flex-1 rounded-2xl bg-[#12141D] border border-[#202330] p-4 overflow-y-auto">
+          <div className="flex-1 rounded-2xl macos-card p-4 overflow-y-auto">
             {output ? (
               <div className="prose prose-invert prose-xs max-w-none">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -184,9 +184,9 @@ ${codeSnippet}
                 </ReactMarkdown>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center text-[#62677C] text-xs space-y-2">
-                <Terminal className="w-8 h-8 text-[#262A3B]" />
-                <span>Select a mode, paste code, and click "Execute" to run analysis.</span>
+              <div className="flex flex-col items-center justify-center h-full text-center text-[#555A6E] text-xs space-y-2">
+                <Terminal className="w-8 h-8 text-white/10" />
+                <span>Select a mode and click "Execute" to run code analysis.</span>
               </div>
             )}
           </div>

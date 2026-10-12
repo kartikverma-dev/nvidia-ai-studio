@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import { 
   MessageSquare, 
-  Terminal, 
   Cpu, 
   Play, 
   BarChart2, 
-  Settings, 
   Plus, 
   Search, 
-  Pin, 
   Trash2, 
   ChevronDown, 
   ChevronLeft,
-  Sparkles,
-  Zap,
-  Code
+  Code,
+  FolderKanban,
+  Sparkles
 } from 'lucide-react';
 import { Conversation } from '../types';
 
@@ -44,14 +41,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   totalCalls
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeWorkspace, setActiveWorkspace] = useState('Default Swarm');
+  const [activeWorkspace, setActiveWorkspace] = useState('Personal Studio');
 
   const navItems = [
-    { id: 'chat', label: 'AI Chat', icon: MessageSquare },
-    { id: 'playground', label: 'Model Playground', icon: Play },
-    { id: 'swarm', label: 'AI Swarm', icon: Cpu, badge: 'NIM' },
-    { id: 'code', label: 'Coding Assistant', icon: Code },
-    { id: 'usage', label: 'Usage Dashboard', icon: BarChart2 },
+    { id: 'chat', label: 'AI Chat', icon: MessageSquare, shortcut: '⌘1' },
+    { id: 'playground', label: 'Playground', icon: Play, shortcut: '⌘2' },
+    { id: 'swarm', label: 'AI Swarm', icon: Cpu, badge: 'NIM', shortcut: '⌘3' },
+    { id: 'code', label: 'Coding Lab', icon: Code, shortcut: '⌘4' },
+    { id: 'usage', label: 'Telemetry', icon: BarChart2, shortcut: '⌘5' },
   ];
 
   const filteredConversations = conversations.filter(c => 
@@ -60,52 +57,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside 
-      className={`relative flex flex-col h-screen bg-[#0D0E12] border-r border-[#1F222E] transition-all duration-300 z-30 select-none ${
+      className={`relative flex flex-col h-screen macos-sidebar transition-all duration-300 z-30 select-none ${
         isCollapsed ? 'w-16' : 'w-64 sm:w-72'
       }`}
     >
-      {/* Brand Header */}
-      <div className="flex items-center justify-between p-4 border-b border-[#1F222E]/80">
-        <div className="flex items-center gap-3 overflow-hidden">
-          {/* EVILCLOWN Geometric Icon */}
-          <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-[#161822] border border-[#2B2F40] shadow-inner group-hover:border-[#E5FF44]/50 transition-colors shrink-0">
-            <svg className="w-5 h-5 text-[#E5FF44]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="m2 17 10 5 10-5" />
-              <path d="m2 12 10 5 10-5" />
-            </svg>
-            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#E5FF44] animate-pulse" />
+      {/* macOS Window Traffic Lights Header */}
+      <div className="flex items-center justify-between px-4 h-12 border-b border-white/[0.07]">
+        {/* macOS Traffic Lights */}
+        <div className="flex items-center gap-2 group/lights">
+          <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 flex items-center justify-center cursor-pointer shadow-sm">
+            <span className="opacity-0 group-hover/lights:opacity-100 text-[8px] font-bold text-black/60 leading-none">×</span>
+          </div>
+          <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 flex items-center justify-center cursor-pointer shadow-sm">
+            <span className="opacity-0 group-hover/lights:opacity-100 text-[8px] font-bold text-black/60 leading-none">–</span>
+          </div>
+          <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 flex items-center justify-center cursor-pointer shadow-sm">
+            <span className="opacity-0 group-hover/lights:opacity-100 text-[7px] font-bold text-black/60 leading-none">+</span>
           </div>
 
           {!isCollapsed && (
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold tracking-wider text-sm text-white">EVILCLOWN</span>
-                <span className="text-[10px] font-mono px-1 py-0.5 rounded bg-[#E5FF44]/10 text-[#E5FF44] font-semibold">AI</span>
-              </div>
-              <span className="text-[11px] text-[#8E93A6] truncate">NVIDIA NIM Studio</span>
+            <div className="ml-3 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-white tracking-wider">EVILCLOWN</span>
+              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-[#E5FF44]/15 text-[#E5FF44] font-bold">PRO</span>
             </div>
           )}
         </div>
 
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 rounded-lg text-[#8E93A6] hover:text-white hover:bg-[#1A1D27] transition-colors"
+          className="p-1 rounded-md text-[#787E96] hover:text-white hover:bg-white/10 transition-colors"
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <ChevronLeft className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} />
+          <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} />
         </button>
       </div>
 
-      {/* Workspace Selector */}
+      {/* Workspace Selector (macOS Dropdown style) */}
       {!isCollapsed && (
         <div className="px-3 pt-3">
-          <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#14161F] border border-[#222533] text-xs text-[#C5C9D8] cursor-pointer hover:border-[#E5FF44]/40 transition-colors">
+          <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] text-xs text-[#D1D5E5] cursor-pointer transition-all">
             <div className="flex items-center gap-2 truncate">
-              <div className="w-2 h-2 rounded-full bg-[#E5FF44]" />
-              <span className="truncate font-medium">{activeWorkspace}</span>
+              <FolderKanban className="w-3.5 h-3.5 text-[#E5FF44]" />
+              <span className="truncate font-medium text-[11px]">{activeWorkspace}</span>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-[#8E93A6]" />
+            <ChevronDown className="w-3 h-3 text-[#787E96]" />
           </div>
         </div>
       )}
@@ -114,20 +109,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-3">
         <button
           onClick={onNewChat}
-          className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold text-xs tracking-wide transition-all shadow-md active:scale-95 ${
+          className={`flex items-center justify-between w-full px-3 py-2 rounded-xl font-semibold text-xs transition-all active:scale-[0.98] shadow-md ${
             isCollapsed 
-              ? 'bg-[#E5FF44] text-black hover:bg-[#D6F232]' 
-              : 'bg-[#E5FF44] text-black hover:bg-[#D6F232] shadow-[0_0_15px_rgba(229,255,68,0.2)]'
+              ? 'justify-center bg-[#E5FF44] text-black hover:bg-[#D6F232]' 
+              : 'bg-[#E5FF44] text-black hover:bg-[#D6F232] shadow-[0_0_15px_rgba(229,255,68,0.22)]'
           }`}
-          title="Start New Chat"
+          title="New Session"
         >
-          <Plus className="w-4 h-4 text-black stroke-[2.5]" />
-          {!isCollapsed && <span>New Session</span>}
+          <div className="flex items-center gap-2">
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            {!isCollapsed && <span>New Session</span>}
+          </div>
+          {!isCollapsed && (
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/10 font-bold">
+              ⌘N
+            </span>
+          )}
         </button>
       </div>
 
-      {/* Navigation Modules */}
-      <div className="px-2 space-y-1">
+      {/* Navigation Modules (macOS Sidebar Items) */}
+      <div className="px-2 space-y-0.5">
+        {!isCollapsed && (
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-[#63687E] px-2.5 py-1">
+            Workspace
+          </div>
+        )}
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -135,52 +142,60 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 isActive 
-                  ? 'bg-[#1E212E] text-white border-l-2 border-[#E5FF44] shadow-sm' 
-                  : 'text-[#9AA0B5] hover:text-white hover:bg-[#161822]'
+                  ? 'bg-white/[0.12] text-white shadow-sm ring-1 ring-white/10' 
+                  : 'text-[#8E93A6] hover:text-white hover:bg-white/[0.05]'
               }`}
               title={item.label}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#E5FF44]' : 'text-[#8E93A6]'}`} />
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#E5FF44]' : 'text-[#787E96]'}`} />
+                {!isCollapsed && <span className="truncate text-[12px]">{item.label}</span>}
               </div>
-              {!isCollapsed && item.badge && (
-                <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#E5FF44]/10 text-[#E5FF44] font-bold">
-                  {item.badge}
-                </span>
+              {!isCollapsed && (
+                <div className="flex items-center gap-1.5">
+                  {item.badge && (
+                    <span className="text-[8px] font-mono uppercase px-1 py-0.5 rounded bg-[#E5FF44]/20 text-[#E5FF44] font-bold">
+                      {item.badge}
+                    </span>
+                  )}
+                  <span className="text-[10px] font-mono text-[#585E75]">
+                    {item.shortcut}
+                  </span>
+                </div>
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Conversation History & Search */}
+      {/* Conversation History & Search (macOS Notes style) */}
       {!isCollapsed && (
-        <div className="flex-1 flex flex-col min-h-0 mt-4 px-3 border-t border-[#1F222E]/80 pt-3">
-          {/* Search bar */}
+        <div className="flex-1 flex flex-col min-h-0 mt-3 px-3 border-t border-white/[0.07] pt-3">
+          {/* macOS Search bar */}
           <div className="relative mb-2">
-            <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-[#62677C]" />
+            <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-[#63687E]" />
             <input
               type="text"
-              placeholder="Search chats..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#14161F] border border-[#222533] text-xs text-[#E1E4F0] placeholder-[#62677C] focus:outline-none focus:border-[#E5FF44]/60 transition-colors"
+              className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-black/40 border border-white/[0.08] text-xs text-[#E1E4F0] placeholder-[#5A5F73] focus:outline-none focus:border-[#E5FF44]/50 transition-colors"
             />
+            <span className="absolute right-2 top-2 text-[10px] font-mono text-[#5A5F73]">⌘K</span>
           </div>
 
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-[#63687E] px-1 mb-1.5 flex items-center justify-between">
-            <span>Recent History</span>
-            <span className="text-[10px] font-normal">{filteredConversations.length}</span>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-[#63687E] px-1 mb-1 flex items-center justify-between">
+            <span>Sessions</span>
+            <span className="text-[9px] font-mono text-[#505466]">{filteredConversations.length}</span>
           </div>
 
           {/* Conversations List */}
           <div className="flex-1 overflow-y-auto space-y-0.5 pr-1">
             {filteredConversations.length === 0 ? (
-              <div className="py-6 text-center text-xs text-[#63687E]">
-                No conversations yet
+              <div className="py-6 text-center text-xs text-[#5A5F73]">
+                No sessions
               </div>
             ) : (
               filteredConversations.map((c) => {
@@ -192,15 +207,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onSelectConversation(c.id);
                       setActiveTab('chat');
                     }}
-                    className={`group flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                    className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
                       isSelected 
-                        ? 'bg-[#1C1F2B] text-white border border-[#2C3042]' 
-                        : 'text-[#8E93A6] hover:text-[#D5D8E6] hover:bg-[#14161F]'
+                        ? 'bg-[#E5FF44]/15 text-white border border-[#E5FF44]/30' 
+                        : 'text-[#8E93A6] hover:text-[#E1E4F0] hover:bg-white/[0.04]'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
                       <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#E5FF44]' : 'text-[#63687E]'}`} />
-                      <span className="truncate">{c.title || 'Untitled Session'}</span>
+                      <span className="truncate text-[11px]">{c.title || 'Untitled Session'}</span>
                     </div>
 
                     <button
@@ -208,8 +223,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         e.stopPropagation();
                         onDeleteConversation(c.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-[#63687E] hover:text-red-400 rounded transition-all"
-                      title="Delete chat"
+                      className="opacity-0 group-hover:opacity-100 p-0.5 text-[#63687E] hover:text-red-400 rounded transition-all"
+                      title="Delete session"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -221,24 +236,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
 
-      {/* Bottom Compact Usage / Status Panel */}
-      <div className="p-3 border-t border-[#1F222E]/80 bg-[#0A0B0E]">
+      {/* Bottom macOS Status Bar Widget */}
+      <div className="p-3 border-t border-white/[0.07] bg-black/30">
         {!isCollapsed ? (
-          <div className="p-2.5 rounded-xl bg-[#12141C] border border-[#202330] space-y-1.5">
+          <div className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-[#8E93A6] flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#E5FF44]" />
-                NVIDIA NIM API
+              <span className="text-[#8E93A6] flex items-center gap-1.5 text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E5FF44] shadow-[0_0_6px_#E5FF44]" />
+                NVIDIA NIM 200 OK
               </span>
-              <span className="font-mono text-[#E5FF44] font-medium text-[10px]">Active</span>
+              <span className="font-mono text-[#E5FF44] text-[10px]">Live</span>
             </div>
-            <div className="flex items-center justify-between text-[11px] text-[#63687E]">
-              <span>Inference Calls</span>
-              <span className="font-mono text-white font-medium">{totalCalls}</span>
+            <div className="flex items-center justify-between text-[10px] text-[#5A5F73] font-mono">
+              <span>Telemetry Count</span>
+              <span className="text-white font-medium">{totalCalls}</span>
             </div>
           </div>
         ) : (
-          <div className="flex justify-center" title="NVIDIA NIM Connected">
+          <div className="flex justify-center" title="NVIDIA NIM Online">
             <div className="w-2 h-2 rounded-full bg-[#E5FF44] ring-4 ring-[#E5FF44]/20" />
           </div>
         )}
