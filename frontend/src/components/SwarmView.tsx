@@ -7,13 +7,20 @@ import {
   Sparkles, 
   Copy, 
   Check, 
-  ShieldAlert,
-  Code2,
-  FileText
+  ShieldAlert, 
+  Code2, 
+  FileText, 
+  Download, 
+  Eye, 
+  X, 
+  ArrowRight,
+  ChevronRight,
+  Info
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Model } from '../types';
+import { playSendSound, playCompletionChime } from '../utils/audio';
 
 interface SwarmViewProps {
   models: Model[];
@@ -21,6 +28,7 @@ interface SwarmViewProps {
   onRecordCall: () => void;
   isSwarmRunning: boolean;
   setIsSwarmRunning: (running: boolean) => void;
+  soundEnabled?: boolean;
 }
 
 interface AgentState {
@@ -31,6 +39,7 @@ interface AgentState {
   status: 'idle' | 'running' | 'completed' | 'error';
   durationMs?: number;
   output?: string;
+  systemPrompt: string;
 }
 
 export const SwarmView: React.FC<SwarmViewProps> = ({
@@ -38,15 +47,17 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
   selectedModel,
   onRecordCall,
   isSwarmRunning,
-  setIsSwarmRunning
+  setIsSwarmRunning,
+  soundEnabled = true
 }) => {
   const [objective, setObjective] = useState(
     'Build a high-performance distributed rate-limiter using Redis token-bucket algorithm, with circuit breaking and zero-downtime graceful fallback.'
   );
-  const [activeTab, setActiveTab] = useState<'monitor' | 'synthesis'>('monitor');
+  const [activeTab, setActiveTab] = useState<'graph' | 'monitor' | 'synthesis'>('graph');
   const [logs, setLogs] = useState<string[]>([]);
   const [synthesisResult, setSynthesisResult] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  const [selectedAgentInspector, setSelectedAgentInspector] = useState<AgentState | null>(null);
 
   const [agents, setAgents] = useState<AgentState[]>([
     {
@@ -54,28 +65,32 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
       name: 'System Architect',
       role: 'Architecture & Decomposition',
       icon: Layers,
-      status: 'idle'
+      status: 'idle',
+      systemPrompt: 'Lead System Architect: Analyzes requirements, identifies core constraints, module breakdown, and technical strategy.'
     },
     {
       id: 'agent-engineer',
       name: 'Core Engineer',
       role: 'Concrete Implementation & Code',
       icon: Code2,
-      status: 'idle'
+      status: 'idle',
+      systemPrompt: 'Senior Implementation Specialist: Writes high-quality, production-ready code structures, algorithms, and models.'
     },
     {
       id: 'agent-auditor',
       name: 'Security & QA Auditor',
       role: 'Threat Analysis & Resilience',
       icon: ShieldAlert,
-      status: 'idle'
+      status: 'idle',
+      systemPrompt: 'Principal Security & Reliability Auditor: Critiques edge cases, vulnerabilities, race conditions, and mitigation plans.'
     },
     {
       id: 'agent-synthesizer',
       name: 'Swarm Synthesizer',
       role: 'Final Executive Deliverable',
       icon: Sparkles,
-      status: 'idle'
+      status: 'idle',
+      systemPrompt: 'Swarm Lead Synthesizer: Merges all agent findings into a polished, executive-ready master architecture deliverable.'
     }
   ]);
 
@@ -87,8 +102,9 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
   const handleLaunchSwarm = async () => {
     if (!objective.trim() || isSwarmRunning) return;
 
+    playSendSound(soundEnabled);
     setIsSwarmRunning(true);
-    setActiveTab('monitor');
+    setActiveTab('graph');
     setLogs([]);
     setSynthesisResult('');
 
@@ -136,6 +152,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
 
           if (raw === '[DONE]') {
             addLog('Swarm multi-agent orchestration completed.');
+            playCompletionChime(soundEnabled);
             setIsSwarmRunning(false);
             break;
           }
@@ -178,8 +195,19 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const exportSynthesisMarkdown = () => {
+    if (!synthesisResult) return;
+    const blob = new Blob([synthesisResult], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `evilclown-swarm-deliverable-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#08090C] overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-[#08090C] overflow-hidden relative">
       {/* macOS Header Bar */}
       <div className="h-12 border-b border-white/[0.07] bg-white/[0.02] px-6 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5">
@@ -215,7 +243,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
       </div>
 
       {/* Main Body */}
-      <div className="flex-1 flex flex-col p-6 space-y-5 overflow-y-auto">
+      <div className="flex-1 flex flex-col p-6 space-y-4 overflow-y-auto">
         {/* Objective Box */}
         <div className="p-4 rounded-2xl macos-card space-y-2">
           <div className="flex items-center justify-between">
@@ -224,7 +252,7 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
               Swarm Mission Objective
             </label>
             <span className="text-[10px] font-mono text-[#E5FF44]">
-              4 Autonomous Roles
+              4 Autonomous Roles • Click card to inspect memory
             </span>
           </div>
           <textarea
@@ -237,6 +265,45 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
           />
         </div>
 
+        {/* Interactive Swarm Flow Pipeline Graph */}
+        <div className="p-3.5 rounded-2xl macos-card">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[#63687E] mb-2 flex items-center justify-between">
+            <span>Agent Pipeline Flow Graph</span>
+            <span className="text-[#E5FF44]">Sequential Context Handover</span>
+          </div>
+          <div className="flex items-center justify-between gap-2 overflow-x-auto py-2 px-1">
+            {agents.map((agent, i) => {
+              const isRunning = agent.status === 'running';
+              const isCompleted = agent.status === 'completed';
+              return (
+                <React.Fragment key={agent.id}>
+                  <div
+                    onClick={() => setSelectedAgentInspector(agent)}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border cursor-pointer transition-all shrink-0 ${
+                      isRunning
+                        ? 'bg-[#E5FF44]/15 border-[#E5FF44] shadow-[0_0_15px_rgba(229,255,68,0.3)] ring-1 ring-[#E5FF44]/40'
+                        : isCompleted
+                        ? 'bg-white/[0.06] border-emerald-500/40 text-emerald-300'
+                        : 'bg-white/[0.02] border-white/[0.06] text-[#71768B]'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E5FF44]" />
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-white">{agent.name}</div>
+                      <div className="text-[9px] font-mono text-[#8E93A6]">{agent.status.toUpperCase()}</div>
+                    </div>
+                  </div>
+                  {i < agents.length - 1 && (
+                    <div className={`flex items-center px-1 shrink-0 ${isRunning ? 'text-[#E5FF44] animate-pulse' : 'text-[#3B3F50]'}`}>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
         {/* 4 Agent Pipeline Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {agents.map((agent, index) => {
@@ -247,7 +314,8 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
             return (
               <div
                 key={agent.id}
-                className={`p-3.5 rounded-2xl border transition-all relative overflow-hidden ${
+                onClick={() => setSelectedAgentInspector(agent)}
+                className={`p-3.5 rounded-2xl border transition-all relative overflow-hidden cursor-pointer group hover:border-[#E5FF44]/40 ${
                   isRunning
                     ? 'bg-white/[0.08] border-[#E5FF44]/60 shadow-[0_0_20px_rgba(229,255,68,0.15)] ring-1 ring-[#E5FF44]/30'
                     : isCompleted
@@ -271,9 +339,12 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
                 </div>
 
                 <div className="mt-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-[10px] text-[#E5FF44]">0{index + 1}.</span>
-                    <h3 className="font-bold text-xs text-white">{agent.name}</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] text-[#E5FF44]">0{index + 1}.</span>
+                      <h3 className="font-bold text-xs text-white group-hover:text-[#E5FF44] transition-colors">{agent.name}</h3>
+                    </div>
+                    <Eye className="w-3 h-3 text-[#63687E] group-hover:text-[#E5FF44] transition-colors" />
                   </div>
                   <p className="text-[11px] text-[#71768B] mt-0.5 leading-snug">
                     {agent.role}
@@ -320,13 +391,23 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
             </div>
 
             {activeTab === 'synthesis' && synthesisResult && (
-              <button
-                onClick={copySynthesis}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#8E93A6] hover:text-white bg-white/[0.06] border border-white/[0.08] transition-colors"
-              >
-                {copied ? <Check className="w-3 h-3 text-[#E5FF44]" /> : <Copy className="w-3 h-3" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={copySynthesis}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#8E93A6] hover:text-white bg-white/[0.06] border border-white/[0.08] transition-colors"
+                >
+                  {copied ? <Check className="w-3 h-3 text-[#E5FF44]" /> : <Copy className="w-3 h-3" />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
+                </button>
+                <button
+                  onClick={exportSynthesisMarkdown}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-[#8E93A6] hover:text-white bg-white/[0.06] border border-white/[0.08] transition-colors"
+                  title="Export deliverable to markdown file"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Export</span>
+                </button>
+              </div>
             )}
           </div>
 
@@ -363,6 +444,78 @@ export const SwarmView: React.FC<SwarmViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Agent Memory Inspector Modal / Sheet */}
+      {selectedAgentInspector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-2xl macos-window shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="h-12 px-4 border-b border-white/[0.08] bg-white/[0.03] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#E5FF44]" />
+                <h3 className="text-xs font-bold text-white tracking-tight">
+                  Agent Memory Inspector: {selectedAgentInspector.name}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedAgentInspector(null)}
+                className="p-1 rounded-md text-[#8E93A6] hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 overflow-y-auto text-xs">
+              {/* Role & Prompt info */}
+              <div className="p-3 rounded-xl macos-card space-y-1">
+                <div className="text-[10px] font-mono text-[#E5FF44] font-semibold">ROLE DIRECTIVE</div>
+                <div className="text-white font-medium">{selectedAgentInspector.role}</div>
+                <p className="text-[#8E93A6] text-[11px] leading-relaxed pt-1">
+                  {selectedAgentInspector.systemPrompt}
+                </p>
+              </div>
+
+              {/* Status and Latency */}
+              <div className="flex items-center gap-3 text-xs font-mono">
+                <span className="px-2 py-0.5 rounded bg-white/[0.06] text-[#A5ABBF]">
+                  Status: <strong className="text-white">{selectedAgentInspector.status.toUpperCase()}</strong>
+                </span>
+                {selectedAgentInspector.durationMs && (
+                  <span className="px-2 py-0.5 rounded bg-white/[0.06] text-[#A5ABBF]">
+                    Duration: <strong className="text-[#E5FF44]">{selectedAgentInspector.durationMs}ms</strong>
+                  </span>
+                )}
+              </div>
+
+              {/* Agent Output Report */}
+              <div className="space-y-1.5">
+                <div className="text-[10px] font-mono text-[#8E93A6] uppercase tracking-wider">
+                  Generated Output & Artifacts
+                </div>
+                <div className="p-4 rounded-xl bg-black/40 border border-white/[0.08] max-h-[300px] overflow-y-auto font-sans leading-relaxed text-[#D5D9EB]">
+                  {selectedAgentInspector.output ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {selectedAgentInspector.output}
+                    </ReactMarkdown>
+                  ) : (
+                    <span className="text-[#555A6E] font-mono text-xs">
+                      No output recorded yet for this agent in the current session.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 px-5 border-t border-white/[0.08] bg-white/[0.02] flex justify-end">
+              <button
+                onClick={() => setSelectedAgentInspector(null)}
+                className="px-4 py-1.5 rounded-xl bg-[#E5FF44] text-black font-bold text-xs hover:bg-[#D6F232] transition-colors"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

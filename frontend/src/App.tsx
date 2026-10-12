@@ -7,41 +7,98 @@ import { SwarmView } from './components/SwarmView';
 import { CodeAssistantView } from './components/CodeAssistantView';
 import { UsageView } from './components/UsageView';
 import { SettingsModal } from './components/SettingsModal';
+import { ArtifactCanvas } from './components/ArtifactCanvas';
 import { Model, Conversation, ChatMessage } from './types';
 import { fetchHealth, fetchModels, streamChatCompletion } from './api';
 
 const DEFAULT_VERIFIED_MODEL = 'meta/llama-3.2-11b-vision-instruct';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('chat');
+  // LocalStorage-backed state initializers
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return localStorage.getItem('evilclown_active_tab') || 'chat';
+  });
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('evilclown_sound') !== 'false';
+  });
 
   // Models state
   const [models, setModels] = useState<Model[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_VERIFIED_MODEL);
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    return localStorage.getItem('evilclown_model') || DEFAULT_VERIFIED_MODEL;
+  });
   const [hasNvidiaKey, setHasNvidiaKey] = useState<boolean>(true);
 
   // Telemetry metrics
-  const [totalCalls, setTotalCalls] = useState<number>(0);
+  const [totalCalls, setTotalCalls] = useState<number>(() => {
+    return parseInt(localStorage.getItem('evilclown_calls') || '0', 10);
+  });
 
   // Swarm state
   const [isSwarmRunning, setIsSwarmRunning] = useState<boolean>(false);
 
   // Conversations state
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: 'conv-1',
-      title: 'Distributed System Architecture',
-      messages: [],
-      updatedAt: new Date().toISOString()
+  const [conversations, setConversations] = useState<Conversation[]>(() => {
+    try {
+      const saved = localStorage.getItem('evilclown_conversations');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      // fallback
     }
-  ]);
-  const [activeConversationId, setActiveConversationId] = useState<string>('conv-1');
+    return [
+      {
+        id: 'conv-1',
+        title: 'Distributed System Architecture',
+        messages: [],
+        updatedAt: new Date().toISOString()
+      }
+    ];
+  });
+  const [activeConversationId, setActiveConversationId] = useState<string>(() => {
+    return localStorage.getItem('evilclown_active_conv') || 'conv-1';
+  });
+
+  // Live Artifact Canvas state
+  const [artifactState, setArtifactState] = useState<{
+    isOpen: boolean;
+    code: string;
+    language: string;
+  }>({
+    isOpen: false,
+    code: '',
+    language: 'typescript'
+  });
 
   // Streaming state for Chat
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Sync to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('evilclown_conversations', JSON.stringify(conversations));
+  }, [conversations]);
+
+  useEffect(() => {
+    localStorage.setItem('evilclown_active_conv', activeConversationId);
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    localStorage.setItem('evilclown_active_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('evilclown_model', selectedModel);
+  }, [selectedModel]);
+
+  useEffect(() => {
+    localStorage.setItem('evilclown_calls', totalCalls.toString());
+  }, [totalCalls]);
+
+  useEffect(() => {
+    localStorage.setItem('evilclown_sound', soundEnabled.toString());
+  }, [soundEnabled]);
 
   // Load models & backend health on start
   useEffect(() => {
@@ -57,9 +114,10 @@ export const App: React.FC = () => {
         const fetchedModels = await fetchModels();
         if (fetchedModels.length > 0) {
           setModels(fetchedModels);
-          // Set to default or verified model
-          const defaultModel = fetchedModels.find(m => m.is_default) || fetchedModels[0];
-          setSelectedModel(defaultModel.id);
+          if (!selectedModel || selectedModel === 'meta/llama-3.1-70b-instruct') {
+            const defaultModel = fetchedModels.find(m => m.is_default) || fetchedModels[0];
+            setSelectedModel(defaultModel.id);
+          }
         }
       } catch (err) {
         console.warn('Error fetching models:', err);
@@ -117,6 +175,14 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleOpenArtifact = (code: string, language: string) => {
+    setArtifactState({
+      isOpen: true,
+      code,
+      language
+    });
+  };
+
   const handleSendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
 
@@ -136,7 +202,6 @@ export const App: React.FC = () => {
       model: selectedModel
     };
 
-    // Update conversation with user message and assistant placeholder
     setConversations(prev => prev.map(c => {
       if (c.id === activeConversationId) {
         const newTitle = c.messages.length === 0 ? text.slice(0, 30) + (text.length > 30 ? '...' : '') : c.title;
@@ -207,7 +272,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#08090C] text-[#F3F4F6] select-none font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#08090C] text-[#F3F4F6] select-none font-sans relative">
       {/* Persistent macOS Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -256,6 +321,8 @@ export const App: React.FC = () => {
               models={models}
               selectedModel={selectedModel}
               onSelectModel={setSelectedModel}
+              onOpenArtifact={handleOpenArtifact}
+              soundEnabled={soundEnabled}
             />
           )}
 
@@ -275,6 +342,7 @@ export const App: React.FC = () => {
               onRecordCall={handleRecordCall}
               isSwarmRunning={isSwarmRunning}
               setIsSwarmRunning={setIsSwarmRunning}
+              soundEnabled={soundEnabled}
             />
           )}
 
@@ -296,6 +364,14 @@ export const App: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* Live macOS Artifact Canvas Slide-Out */}
+      <ArtifactCanvas
+        isOpen={artifactState.isOpen}
+        onClose={() => setArtifactState(prev => ({ ...prev, isOpen: false }))}
+        code={artifactState.code}
+        language={artifactState.language}
+      />
 
       {/* macOS Settings Modal Sheet */}
       <SettingsModal
