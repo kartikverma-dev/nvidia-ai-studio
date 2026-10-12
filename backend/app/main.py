@@ -26,15 +26,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers under /api and root
-app.include_router(health.router, prefix="/api", tags=["Health"])
-app.include_router(models.router, prefix="/api", tags=["Models"])
-app.include_router(chat.router, prefix="/api", tags=["Chat"])
-app.include_router(playground.router, prefix="/api", tags=["Playground"])
-app.include_router(swarm.router, prefix="/api", tags=["Swarm"])
+# Include routers under both /api and root paths for Vercel serverless compatibility
+for prefix in ["/api", ""]:
+    app.include_router(health.router, prefix=prefix, tags=["Health"])
+    app.include_router(models.router, prefix=prefix, tags=["Models"])
+    app.include_router(chat.router, prefix=prefix, tags=["Chat"])
+    app.include_router(playground.router, prefix=prefix, tags=["Playground"])
+    app.include_router(swarm.router, prefix=prefix, tags=["Swarm"])
 
-# Also mount health directly at root /health for convenience
-app.include_router(health.router, tags=["Root Health"])
 
 @app.get("/")
 async def root():
