@@ -1,6 +1,6 @@
 import { Model, ChatMessage } from './types';
 
-export const API_BASE = '/api';
+export const API_BASE = (import.meta.env.VITE_API_URL as string) || '/api';
 
 export async function fetchHealth() {
   const res = await fetch(`${API_BASE}/health`);
