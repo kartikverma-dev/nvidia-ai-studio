@@ -1,7 +1,0 @@
-import sys
-from pathlib import Path
-
-# Add project root to path for Vercel serverless environment
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from backend.app.main import app
